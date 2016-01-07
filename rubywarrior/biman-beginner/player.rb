@@ -1,49 +1,37 @@
 class Player
-  MIN_HEALTH = 15
-  FLEE_HEALTH = 7
-    
   def play_turn(warrior)
-      # switch to ||= like a good boy
-      @last_known_health ||= warrior.health
-      @direction ||= :forward
-      feel_space = warrior.feel @direction
+    # cool code goes here
+    if @haveRescued.nil?
+      @haveRescued = false
+    end
     
-
-      if warrior.feel.wall? 
-          warrior.pivot!
-      elsif feel_space.empty?
-          if should_flee? warrior
-              @direction = :backward
-              warrior.walk! @direction
-          elsif should_rest? warrior
-              warrior.rest!
-          else
-              warrior.walk! @direction
-          end
-      elsif feel_space.captive?
-          warrior.rescue! @direction
-      elsif feel_space.wall?
-          @direction = :forward
-      else
-          warrior.attack!
+    if !@haveRescued
+      if warrior.feel.empty?
+        warrior.walk!
+      elsif warrior.feel.captive?
+        warrior.rescue!
+        @haveRescued = true
       end
+    else
+      if @space.nil?
+        @space = warrior.look
+        @time_to_shoot = false
+      else
+        @space.each do |space|
+          if space.enemy?
+            @time_to_shoot = true
+            break
+          else
+            @time_to_shoot = false
+          end
+        end
+        if @time_to_shoot
+          warrior.shoot!
+        else
+          warrior.walk!
+        end
+      end
+    end
     
-      @last_known_health = warrior.health
-    end
- 
-    private
-      
-    def should_flee? warrior
-        bad_health = warrior.health < FLEE_HEALTH
-        !safe?(warrior) && bad_health
-    end
-    
-    def should_rest? warrior
-        bad_health = warrior.health < MIN_HEALTH
-        safe?(warrior) && bad_health
-    end
-    
-    def safe? warrior
-        warrior.health >= @last_known_health
-    end
+  end
 end
